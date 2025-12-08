@@ -2,52 +2,44 @@ import { GoogleGenAI } from "@google/genai";
 import { AIAnalysisResponse } from "../types";
 
 const SYSTEM_PROMPT = `
-You are an expert Forex and Crypto technical analyst specializing in ICT (Inner Circle Trader) concepts.
-Your job is to analyze trading charts provided as images.
+You are an expert Forex and Crypto technical analyst.
+Your job is to analyze trading charts provided as images and extract a valid trade setup.
 
-Analyze the chart for:
-1. Market Structure (Trends, BOS, CHoCH)
-2. Liquidity Sweeps
-3. Fair Value Gaps (FVG)
-4. Order Blocks (OB)
-5. Optimal Trade Entry (OTE) via Fibonacci (0.618 - 0.79)
+**INSTRUCTIONS:**
+1. Identify the main trend or pattern (e.g., Uptrend, Downtrend, Range, Breakout).
+2. Look for any ICT concepts if present (Order Blocks, FVG, Liquidity), but standard Price Action (Support/Resistance) is also acceptable.
+3. Determine a logical Entry, Stop Loss (SL), and Take Profit (TP) levels based on the visual data.
 
-If a valid trade setup exists, identify the primary STRATEGY used (e.g., "Bearish Order Block", "Liquidity Sweep + FVG", "Breaker Block Re-test").
-
-**IMPORTANT:**
-- Analyze the visible price action to the best of your ability. 
-- Even if the chart is zoomed in, cropped, or imperfect, attempt to identify the trend and key levels.
-- **Only** return "isSetupValid": false if the image is **completely unrecognizable** as a financial chart or contains zero price candles.
+**CRITICAL OVERRIDE RULES:**
+- **ALWAYS return a valid JSON response**, even if the chart is unclear, zoomed in, or messy. 
+- **Infer** the pair and timeframe if they are not explicitly visible.
+- **NEVER** return "isSetupValid": false unless the image is clearly NOT a chart (e.g., a selfie, a cat, a blank screen).
+- If the image contains candlesticks or price lines, **YOU MUST GENERATE A SIGNAL**.
+- **TIGHT STOP LOSS**: Place SL at the nearest invalidation point. Do not use wide stops.
+- **RISK TO REWARD**: Aim for 1:2 RR minimum.
 
 You MUST return the response in strict JSON format.
 The JSON schema is:
 {
-  "pair": "string (e.g. XAUUSD, EURUSD, BTCUSD)",
-  "timeframe": "string (e.g. 15m, 1h, 4h)",
+  "pair": "string (e.g. XAUUSD, BTCUSD - infer if missing)",
+  "timeframe": "string (e.g. 15m, 1h - default to 'Current')",
   "direction": "BUY" or "SELL",
-  "strategy": "string (The specific name of the setup, e.g. 'Bullish Order Block')",
+  "strategy": "string (e.g. 'Order Block', 'Trend Follow', 'Breakout')",
   "entry": number,
   "sl": number,
   "tp1": number,
   "tp2": number,
-  "reasoning": "string (Explain the setup using ICT terms like 'Price swept liquidity then created a BOS...')",
+  "reasoning": "string (Concise explanation of the setup)",
   "isSetupValid": boolean,
-  "marketStructure": ["string", "string"] (List key elements found e.g. 'Bearish FVG', 'BOS')
+  "marketStructure": ["string", "string"]
 }
-
-CRITICAL RULES:
-- **TIGHT STOP LOSS**: Look for precise invalidation levels (e.g., just above/below the Order Block or Swing High/Low). Do not use wide stops. Make the SL small to maximize R:R.
-- **RISK TO REWARD**: TP1 must be at least 1:1. TP2 must be at least 1:2.
-- Never give random numbers. Read the price scale on the right.
-- Direction must match the structure.
-- If the pair name is not visible, infer it from context or default to "Unknown Asset".
-- Reasoning should be concise but professional.
 `;
 
 export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAnalysisResponse> => {
   try {
+    // Check for API Key presence to provide a clear error if missing
     if (!process.env.API_KEY) {
-      throw new Error("API Key not configured");
+      throw new Error("API Key is missing. Please check your app settings/environment variables.");
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -73,35 +65,43 @@ export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAna
       ],
       config: {
         responseMimeType: "application/json",
-        temperature: 0.2 // Low temperature for analytical precision
+        temperature: 0.2
       }
     });
 
     const text = response.text;
-    if (!text) throw new Error("No response from AI");
+    if (!text) throw new Error("No response received from AI Model.");
 
-    const data = JSON.parse(text) as AIAnalysisResponse;
+    let data: AIAnalysisResponse;
+    try {
+        data = JSON.parse(text) as AIAnalysisResponse;
+    } catch (e) {
+        throw new Error("Failed to parse AI response. Raw text: " + text.substring(0, 50) + "...");
+    }
+
     // Ensure marketStructure is always an array
     if (!data.marketStructure) data.marketStructure = [];
     
     // Fallback if strategy is missing
-    if (!data.strategy) data.strategy = "Price Action Pattern";
+    if (!data.strategy) data.strategy = "Price Action";
 
     return data;
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
-    // Return a safe fallback error state
+    
+    // Return the specific error message to the UI for debugging
     return {
-      pair: "UNKNOWN",
+      pair: "ERROR",
       timeframe: "N/A",
       direction: "N/A",
-      strategy: "N/A",
+      strategy: "System Error",
       entry: 0,
       sl: 0,
       tp1: 0,
       tp2: 0,
-      reasoning: "Failed to analyze chart. Please try a clearer image.",
+      // Pass the actual error message to the user
+      reasoning: error.message || "Unknown error occurred during analysis.",
       isSetupValid: false,
       marketStructure: []
     };

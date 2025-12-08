@@ -71,7 +71,8 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
         const analysis = await analyzeChartWithGemini(base64);
 
         if (!analysis.isSetupValid) {
-          setErrorMsg("Structure Unclear. Ensure chart includes candlesticks and visible price action.");
+          // Display the specific error reason from the service (e.g. API Key missing)
+          setErrorMsg(analysis.reasoning || "Analysis failed. Please try a clearer chart image.");
           setIsAnalyzing(false);
           return;
         }
@@ -156,11 +157,11 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                signalsUsedToday: user.signalsUsedToday + 1,
                tradeHistory: [tradeLogItem, ...history]
              });
-        }, 2000);
+        }, 1500);
       };
     } catch (err) {
       console.error(err);
-      setErrorMsg("Analysis Protocol Failed. System Error.");
+      setErrorMsg("Critical System Error. Please check console.");
       setIsAnalyzing(false);
     }
   };
