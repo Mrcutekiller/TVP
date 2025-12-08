@@ -37,12 +37,34 @@ The JSON schema is:
 
 export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAnalysisResponse> => {
   try {
-    // Check for API Key presence to provide a clear error if missing
-    if (!process.env.API_KEY) {
-      throw new Error("API Key is missing. Please check your app settings/environment variables.");
+    // Robust API Key Retrieval for Vercel/Vite/React environments
+    let apiKey = '';
+
+    // 1. Try standard process.env (Node/Webpack/Some Vite configs)
+    // We check typeof process to avoid ReferenceErrors in strict browser environments
+    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+      apiKey = process.env.API_KEY;
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // 2. Try Vite's import.meta.env (Standard Vite)
+    // We cast to 'any' to avoid TypeScript errors if types aren't explicitly configured
+    if (!apiKey) {
+      try {
+        const meta = import.meta as any;
+        if (meta && meta.env) {
+          apiKey = meta.env.VITE_API_KEY || meta.env.API_KEY;
+        }
+      } catch (e) {
+        // Ignore errors if import.meta is not available
+      }
+    }
+
+    // 3. Throw explicit error if still missing
+    if (!apiKey) {
+      throw new Error("Configuration Error: API Key is missing. If you are on Vercel, please add 'VITE_API_KEY' to your Environment Variables.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: apiKey });
     
     // Using flash for speed and vision capabilities
     const modelId = "gemini-2.5-flash";
@@ -56,7 +78,7 @@ export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAna
             { text: SYSTEM_PROMPT },
             {
               inlineData: {
-                mimeType: "image/png", // Assuming PNG, but API handles common types
+                mimeType: "image/png", 
                 data: base64Image
               }
             }
@@ -90,7 +112,6 @@ export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAna
   } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
     
-    // Return the specific error message to the UI for debugging
     return {
       pair: "ERROR",
       timeframe: "N/A",
@@ -100,7 +121,6 @@ export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAna
       sl: 0,
       tp1: 0,
       tp2: 0,
-      // Pass the actual error message to the user
       reasoning: error.message || "Unknown error occurred during analysis.",
       isSetupValid: false,
       marketStructure: []
