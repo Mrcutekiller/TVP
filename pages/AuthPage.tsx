@@ -21,69 +21,89 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
 
-    if (!isLogin && !formData.username) {
-        setError('Please choose an Operative Name (Username)');
-        return;
-    }
-
-    if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
-      return;
-    }
-
-    // Basic email validation
-    if (!formData.email.includes('@')) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
+    // --- LOGIC FOR LOGIN ---
     if (isLogin) {
-      const stored = localStorage.getItem('sniper_user');
-      if (stored) {
-        const user = JSON.parse(stored);
-        // Check against Email or Username (legacy support)
-        const isMatch = (user.email && user.email.toLowerCase() === formData.email.toLowerCase()) || 
-                        (user.username && user.username.toLowerCase() === formData.email.toLowerCase());
-        
-        if (isMatch) {
-          onLogin(user);
-          navigate('/dashboard');
-        } else {
-            // If user doesn't exist in local storage, prompt to signup (Demo logic)
-            setError('Account not found. Please create an identity.');
+        if (!formData.email || !formData.password) {
+            setError('Please fill in credentials.');
+            return;
         }
-      } else {
-        setError('No account found. Please sign up.');
-      }
-    } else {
-      handleSignup();
-    }
-  };
 
-  const handleSignup = () => {
-    // Use provided username or fallback to email derived
-    const finalUsername = formData.username || formData.email.split('@')[0];
-    
-    const newUser: UserProfile = {
-      id: crypto.randomUUID(),
-      username: finalUsername, // Operative Name
-      email: formData.email,
-      plan: PlanTier.FREE,
-      signalsUsedLifetime: 0,
-      signalsUsedToday: 0,
-      joinDate: new Date().toISOString(),
-      settings: {
-        accountSize: 1000,
-        riskPercentage: 1,
-        accountType: AccountType.STANDARD
-      },
-      idTheme: 'cyan',
-      tradeHistory: []
-    };
-    
-    localStorage.setItem('sniper_user', JSON.stringify(newUser));
-    onLogin(newUser);
-    navigate('/dashboard');
+        // 1. Fetch Users "Database"
+        const usersStr = localStorage.getItem('tv_users');
+        const users: UserProfile[] = usersStr ? JSON.parse(usersStr) : [];
+        
+        // 2. Find User (Case insensitive email)
+        // Also support username login for convenience if needed, but primary is email
+        const foundUser = users.find(u => 
+            (u.email && u.email.toLowerCase() === formData.email.toLowerCase()) || 
+            (u.username && u.username.toLowerCase() === formData.email.toLowerCase())
+        );
+
+        if (foundUser) {
+            // 3. Set Session
+            localStorage.setItem('tv_session', JSON.stringify(foundUser));
+            onLogin(foundUser);
+            navigate('/dashboard');
+        } else {
+            setError('Account not found. Please register an operative identity.');
+        }
+    } 
+    // --- LOGIC FOR SIGNUP ---
+    else {
+        if (!formData.username) {
+            setError('Please choose an Operative Name (Username)');
+            return;
+        }
+        if (!formData.email || !formData.password) {
+            setError('Please fill in all fields');
+            return;
+        }
+        if (!formData.email.includes('@')) {
+            setError('Invalid email format');
+            return;
+        }
+
+        // 1. Fetch Users "Database"
+        const usersStr = localStorage.getItem('tv_users');
+        const users: UserProfile[] = usersStr ? JSON.parse(usersStr) : [];
+
+        // 2. Check duplicates
+        const exists = users.some(u => 
+            (u.email && u.email.toLowerCase() === formData.email.toLowerCase())
+        );
+        if (exists) {
+            setError('This email is already registered.');
+            return;
+        }
+
+        // 3. Create User
+        const newUser: UserProfile = {
+            id: crypto.randomUUID(),
+            username: formData.username,
+            email: formData.email,
+            plan: PlanTier.FREE,
+            signalsUsedLifetime: 0,
+            signalsUsedToday: 0,
+            joinDate: new Date().toISOString(),
+            settings: {
+                accountSize: 1000,
+                riskPercentage: 1,
+                accountType: AccountType.STANDARD
+            },
+            idTheme: 'cyan',
+            tradeHistory: []
+        };
+
+        // 4. Save to Database
+        users.push(newUser);
+        localStorage.setItem('tv_users', JSON.stringify(users));
+
+        // 5. Set Session
+        localStorage.setItem('tv_session', JSON.stringify(newUser));
+        
+        onLogin(newUser);
+        navigate('/dashboard');
+    }
   };
 
   return (
@@ -123,7 +143,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
           )}
 
           <div className="space-y-2">
-            <label className="text-xs font-bold text-primary-400 uppercase tracking-widest ml-1">{isLogin ? 'Email / ID' : 'Email Address'}</label>
+            <label className="text-xs font-bold text-primary-400 uppercase tracking-widest ml-1">{isLogin ? 'Email Address' : 'Email Address'}</label>
             <div className="relative group">
               <Mail className="absolute left-4 top-3.5 text-slate-500 group-focus-within:text-primary-400 transition-colors" size={18} />
               <input 

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { UserProfile, TradeSignal, PlanTier } from '../types';
 import Sidebar from '../components/Sidebar';
@@ -125,7 +124,9 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
           riskAmount: parseFloat(riskAmount.toFixed(2)),
           rewardTp1: parseFloat(riskAmount.toFixed(2)),
           rewardTp2: parseFloat((riskAmount * 2).toFixed(2)),
-          reasoning: analysis.reasoning
+          reasoning: analysis.reasoning,
+          // Ensure strategy has a fallback
+          strategy: analysis.strategy || 'Standard Price Action'
         };
 
         // Simulate "Processing" time for effect
@@ -148,7 +149,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                 tp1: newSignal.tp1,
                 tp2: newSignal.tp2,
                 reasoning: newSignal.reasoning,
-                strategy: newSignal.strategy
+                strategy: newSignal.strategy || 'Standard Price Action'
              };
              
              const history = user.tradeHistory || [];
@@ -169,8 +170,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
   const handleCopyShare = () => {
     if (!lastSignal) return;
     const isBuy = lastSignal.direction === 'BUY';
-    const arrow = isBuy ? '🟢' : '🔴';
-    const text = `Trade Vision Intel\n${lastSignal.pair} | ${lastSignal.direction}\nEntry: ${lastSignal.entry}\nSL: ${lastSignal.sl}\nTP: ${lastSignal.tp2}\nStrategy: ${lastSignal.strategy}`;
+    const text = `Trade Vision Intel\n${lastSignal.pair} | ${lastSignal.direction}\nEntry: ${lastSignal.entry}\nSL: ${lastSignal.sl}\nTP: ${lastSignal.tp2}\nStrategy: ${lastSignal.strategy || 'Standard Price Action'}`;
     navigator.clipboard.writeText(text);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
@@ -257,7 +257,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                         onClick={() => setLastSignal(null)}
                         className="text-sm font-bold text-slate-400 hover:text-white flex items-center gap-2 transition"
                      >
-                        <RefreshCw size={14}/> Reset Terminal
+                        <RefreshCw size={14}/> Clear Analysis
                      </button>
                      <button 
                        onClick={handleCopyShare}
@@ -287,7 +287,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                                 <span className="text-slate-400 font-mono">{lastSignal.timeframe} Chart</span>
                                 <span className="w-1 h-1 bg-slate-600 rounded-full"></span>
                                 <span className="text-primary-400 font-bold uppercase tracking-wider flex items-center gap-2">
-                                   <BrainCircuit size={14} /> {lastSignal.strategy}
+                                   <BrainCircuit size={14} /> {lastSignal.strategy || 'Standard Price Action'}
                                 </span>
                              </div>
                           </div>

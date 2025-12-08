@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../types';
@@ -108,7 +107,15 @@ const Sidebar: React.FC<Props> = ({ user }) => {
                </div>
             </div>
             <button 
-               onClick={() => { localStorage.removeItem('sniper_user'); window.location.href = '#/'; window.location.reload(); }}
+               onClick={() => { 
+                  // CLEAR SESSION ONLY - KEEP DB ('tv_users')
+                  localStorage.removeItem('tv_session'); 
+                  // Clean up legacy key if it exists
+                  localStorage.removeItem('sniper_user');
+                  
+                  window.location.href = '#/'; 
+                  window.location.reload(); 
+               }}
                className="w-full flex items-center justify-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition py-3 rounded-xl hover:bg-white/5 group"
             >
                <LogOut size={14} className="group-hover:text-danger" /> Disconnect

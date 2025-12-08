@@ -118,24 +118,59 @@ const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize/Load User from LocalStorage
+  // Initialize/Load User from LocalStorage (Session)
   useEffect(() => {
-    const storedUser = localStorage.getItem('sniper_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    // We now use 'tv_session' for the currently logged in user
+    const storedSession = localStorage.getItem('tv_session');
+    
+    // Legacy support: Check for old 'sniper_user' key and migrate it if found
+    if (!storedSession) {
+        const legacy = localStorage.getItem('sniper_user');
+        if (legacy) {
+            const legacyUser = JSON.parse(legacy);
+            localStorage.setItem('tv_session', legacy);
+            
+            // Also ensure it's in the DB
+            const dbStr = localStorage.getItem('tv_users');
+            const db = dbStr ? JSON.parse(dbStr) : [];
+            if (!db.some((u: any) => u.id === legacyUser.id)) {
+                db.push(legacyUser);
+                localStorage.setItem('tv_users', JSON.stringify(db));
+            }
+            setUser(legacyUser);
+        }
+    } else {
+        setUser(JSON.parse(storedSession));
     }
+    
     setIsLoading(false);
   }, []);
 
   const updateUser = (updates: Partial<UserProfile>) => {
     if (!user) return;
-    const updated = { ...user, ...updates };
-    setUser(updated);
-    localStorage.setItem('sniper_user', JSON.stringify(updated));
+    const updatedUser = { ...user, ...updates };
+    
+    // 1. Update State
+    setUser(updatedUser);
+    
+    // 2. Update Active Session
+    localStorage.setItem('tv_session', JSON.stringify(updatedUser));
+    
+    // 3. Update Permanent Database (So data isn't lost on logout)
+    const dbStr = localStorage.getItem('tv_users');
+    if (dbStr) {
+        const db: UserProfile[] = JSON.parse(dbStr);
+        const index = db.findIndex(u => u.id === updatedUser.id);
+        if (index !== -1) {
+            db[index] = updatedUser;
+            localStorage.setItem('tv_users', JSON.stringify(db));
+        }
+    }
   };
 
   const handleLogin = (loggedInUser: UserProfile) => {
     setUser(loggedInUser);
+    // Note: The AuthPage handles setting the 'tv_session'
   };
 
   if (isLoading) return null;
