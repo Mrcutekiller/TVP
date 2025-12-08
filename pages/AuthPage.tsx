@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile, PlanTier, AccountType } from '../types';
-import { Eye, ArrowRight, Mail, Key, UserPlus, LogIn } from 'lucide-react';
+import { Eye, ArrowRight, Mail, Key, UserPlus, LogIn, User } from 'lucide-react';
 
 interface Props {
   onLogin: (user: UserProfile) => void;
@@ -12,6 +12,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     email: '',
+    username: '',
     password: ''
   });
   const [error, setError] = useState('');
@@ -19,6 +20,11 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!isLogin && !formData.username) {
+        setError('Please choose an Operative Name (Username)');
+        return;
+    }
 
     if (!formData.email || !formData.password) {
       setError('Please fill in all fields');
@@ -55,12 +61,12 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
   };
 
   const handleSignup = () => {
-    // Derive a username from the email (e.g. john from john@example.com)
-    const derivedUsername = formData.email.split('@')[0];
+    // Use provided username or fallback to email derived
+    const finalUsername = formData.username || formData.email.split('@')[0];
     
     const newUser: UserProfile = {
       id: crypto.randomUUID(),
-      username: derivedUsername, // Operative Name
+      username: finalUsername, // Operative Name
       email: formData.email,
       plan: PlanTier.FREE,
       signalsUsedLifetime: 0,
@@ -100,8 +106,24 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {!isLogin && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                <label className="text-xs font-bold text-primary-400 uppercase tracking-widest ml-1">Operative Name</label>
+                <div className="relative group">
+                <User className="absolute left-4 top-3.5 text-slate-500 group-focus-within:text-primary-400 transition-colors" size={18} />
+                <input 
+                    type="text" 
+                    placeholder="e.g. Neo"
+                    className="w-full bg-slate-950/80 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-600 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-all font-sans"
+                    value={formData.username}
+                    onChange={(e) => setFormData({...formData, username: e.target.value})}
+                />
+                </div>
+            </div>
+          )}
+
           <div className="space-y-2">
-            <label className="text-xs font-bold text-primary-400 uppercase tracking-widest ml-1">Email Address</label>
+            <label className="text-xs font-bold text-primary-400 uppercase tracking-widest ml-1">{isLogin ? 'Email / ID' : 'Email Address'}</label>
             <div className="relative group">
               <Mail className="absolute left-4 top-3.5 text-slate-500 group-focus-within:text-primary-400 transition-colors" size={18} />
               <input 
@@ -151,7 +173,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             onClick={() => {
               setIsLogin(!isLogin);
               setError('');
-              setFormData({ email: '', password: '' });
+              setFormData({ email: '', password: '', username: '' });
             }}
             className="text-slate-400 text-sm hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto hover:underline decoration-primary-500 underline-offset-4"
           >
