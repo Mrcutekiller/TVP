@@ -14,7 +14,10 @@ Analyze the chart for:
 
 If a valid trade setup exists, identify the primary STRATEGY used (e.g., "Bearish Order Block", "Liquidity Sweep + FVG", "Breaker Block Re-test").
 
-If the image is not a clear chart, or is too zoomed in to see structure, or there is no valid setup, return isSetupValid: false.
+**IMPORTANT:**
+- Analyze the visible price action to the best of your ability. 
+- Even if the chart is zoomed in, cropped, or imperfect, attempt to identify the trend and key levels.
+- **Only** return "isSetupValid": false if the image is **completely unrecognizable** as a financial chart or contains zero price candles.
 
 You MUST return the response in strict JSON format.
 The JSON schema is:
@@ -37,7 +40,7 @@ CRITICAL RULES:
 - **RISK TO REWARD**: TP1 must be at least 1:1. TP2 must be at least 1:2.
 - Never give random numbers. Read the price scale on the right.
 - Direction must match the structure.
-- If the chart is ambiguous, set isSetupValid: false.
+- If the pair name is not visible, infer it from context or default to "Unknown Asset".
 - Reasoning should be concise but professional.
 `;
 
