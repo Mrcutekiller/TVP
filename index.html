@@ -16,7 +16,6 @@
               mono: ['JetBrains Mono', 'monospace'],
             },
             colors: {
-              // New Palette: Deep Slate & Electric Indigo
               slate: {
                 850: '#151e2e',
                 900: '#0f172a',
@@ -24,12 +23,12 @@
               },
               primary: {
                 400: '#818cf8',
-                500: '#6366f1', // Electric Indigo
+                500: '#6366f1',
                 600: '#4f46e5',
                 900: '#312e81',
               },
               accent: {
-                400: '#22d3ee', // Cyan acccent
+                400: '#22d3ee',
                 500: '#06b6d4',
               },
               success: '#10b981',
@@ -132,5 +131,7 @@
 </head>
   <body>
     <div id="root"></div>
+    <!-- Entry point required for Vite/Vercel build -->
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>

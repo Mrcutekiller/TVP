@@ -483,12 +483,10 @@ const Dashboard: React.FC<Props> = ({ user, updateUser }) => {
                       </div>
 
                       {/* STRATEGY DISPLAY (NEW) */}
-                      {selectedSignal.strategy && (
-                        <div className="mb-6 bg-primary-500/5 border border-primary-500/20 p-2 rounded text-center">
-                           <span className="text-[10px] text-primary-400 uppercase font-bold tracking-widest block mb-1">Detected Strategy</span>
-                           <span className="text-white font-bold text-sm">{selectedSignal.strategy}</span>
-                        </div>
-                      )}
+                      <div className="mb-6 bg-primary-500/5 border border-primary-500/20 p-2 rounded text-center">
+                         <span className="text-[10px] text-primary-400 uppercase font-bold tracking-widest block mb-1">Detected Strategy</span>
+                         <span className="text-white font-bold text-sm">{selectedSignal.strategy || 'N/A'}</span>
+                      </div>
 
                       {/* RISK MANAGEMENT SECTION */}
                       <div className="space-y-3 pt-2">
