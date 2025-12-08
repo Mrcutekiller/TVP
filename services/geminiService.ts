@@ -37,31 +37,55 @@ The JSON schema is:
 
 export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAnalysisResponse> => {
   try {
-    // Robust API Key Retrieval for Vercel/Vite/React environments
     let apiKey = '';
 
-    // 1. Try standard process.env (Node/Webpack/Some Vite configs)
-    // We check typeof process to avoid ReferenceErrors in strict browser environments
-    if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-      apiKey = process.env.API_KEY;
+    // --- ROBUST API KEY DISCOVERY ---
+    
+    // 1. Vite / Vercel (Standard) - Using brackets to avoid some bundler replacements
+    // @ts-ignore
+    if (import.meta.env && import.meta.env['VITE_API_KEY']) {
+      // @ts-ignore
+      apiKey = import.meta.env['VITE_API_KEY'];
+    }
+    
+    // 2. Vite (Direct Property Access)
+    // @ts-ignore
+    if (!apiKey && import.meta.env && import.meta.env.VITE_API_KEY) {
+      // @ts-ignore
+      apiKey = import.meta.env.VITE_API_KEY;
     }
 
-    // 2. Try Vite's import.meta.env (Standard Vite)
-    // We cast to 'any' to avoid TypeScript errors if types aren't explicitly configured
-    if (!apiKey) {
-      try {
-        const meta = import.meta as any;
-        if (meta && meta.env) {
-          apiKey = meta.env.VITE_API_KEY || meta.env.API_KEY;
-        }
-      } catch (e) {
-        // Ignore errors if import.meta is not available
-      }
+    // 3. Fallback: Generic API_KEY
+    // @ts-ignore
+    if (!apiKey && import.meta.env && import.meta.env.API_KEY) {
+      // @ts-ignore
+      apiKey = import.meta.env.API_KEY;
     }
 
-    // 3. Throw explicit error if still missing
+    // 4. Next.js / React Style (Just in case)
+    // @ts-ignore
+    if (!apiKey && import.meta.env && import.meta.env.NEXT_PUBLIC_API_KEY) {
+      // @ts-ignore
+      apiKey = import.meta.env.NEXT_PUBLIC_API_KEY;
+    }
+
+    // 5. Node.js Process (Local dev / Webpack)
+    if (!apiKey && typeof process !== 'undefined' && process.env) {
+      apiKey = process.env.API_KEY || process.env.VITE_API_KEY || '';
+    }
+
+    // DEBUGGING (Safe Log - only first 4 chars)
+    if (apiKey) {
+      console.log(`API Key found: ${apiKey.substring(0, 4)}...`);
+    } else {
+      console.error("API Key not found in any environment variable.");
+      // Log available keys (safe mode)
+      // @ts-ignore
+      if (import.meta.env) console.log("Available Env Keys:", Object.keys(import.meta.env));
+    }
+
     if (!apiKey) {
-      throw new Error("Configuration Error: API Key is missing. If you are on Vercel, please add 'VITE_API_KEY' to your Environment Variables.");
+      throw new Error("Configuration Error: API Key is missing. Please add 'VITE_API_KEY' to your Vercel Environment Variables and REDEPLOY.");
     }
 
     const ai = new GoogleGenAI({ apiKey: apiKey });

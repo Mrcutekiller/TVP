@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile, PlanTier, AccountType } from '../types';
@@ -108,7 +107,7 @@ const LandingPage: React.FC<Props> = ({ user }) => {
                 </span>
             </button>
 
-            {/* Telegram Links in Hero for visibility */}
+            {/* Telegram Links in Hero */}
             <div className="flex gap-4 animate-in fade-in zoom-in duration-700 delay-300">
                 <a 
                     href="https://t.me/+b92hQ2hs669lOTE0" 
@@ -257,7 +256,7 @@ const LandingPage: React.FC<Props> = ({ user }) => {
       {/* Footer / Team */}
       <footer className="border-t border-white/5 bg-slate-950 pt-24 pb-12">
         <div className="container mx-auto px-6">
-           <div className="text-center mb-16">
+           <div className="text-center mb-24">
               <h3 className="text-2xl font-bold text-white mb-12 uppercase tracking-widest">Core Team</h3>
               
               <div className="flex flex-col md:flex-row justify-center items-center gap-16">
@@ -292,10 +291,10 @@ const LandingPage: React.FC<Props> = ({ user }) => {
               </div>
            </div>
 
-           {/* Expanded Info Grid */}
+           {/* Expanded Info Grid with Brand Column */}
            <div className="grid md:grid-cols-5 gap-12 py-16 border-t border-white/5 text-left max-w-7xl mx-auto">
               
-              {/* Brand & Community Column */}
+              {/* Brand Column */}
               <div className="md:col-span-2 space-y-6 pr-8">
                  <div className="flex items-center gap-2">
                     <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
@@ -306,33 +305,30 @@ const LandingPage: React.FC<Props> = ({ user }) => {
                  <p className="text-slate-500 text-sm leading-relaxed">
                     AI-powered trading signal generator. Upload your charts and let our advanced algorithms identify profitable trading opportunities with precise entry and exit points.
                  </p>
-                 <div className="flex flex-wrap gap-4 pt-2">
+              </div>
+
+              {/* Community Column (NEW) */}
+              <div className="space-y-4">
+                 <h4 className="text-white font-bold flex items-center gap-2 text-sm uppercase tracking-wider">Community</h4>
+                 <div className="flex flex-col gap-3">
                     <a 
                       href="https://t.me/+b92hQ2hs669lOTE0" 
                       target="_blank"
-                      className="px-5 py-2.5 bg-slate-900 border border-slate-700 hover:border-primary-500 hover:text-primary-400 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2 shadow-lg hover:shadow-primary-500/20"
+                      className="text-slate-500 hover:text-primary-400 text-sm font-bold transition-all flex items-center gap-2"
                     >
                        <Send size={16} /> Join Group
                     </a>
                     <a 
                       href="https://t.me/tradingvisionpro" 
                       target="_blank"
-                      className="px-5 py-2.5 bg-primary-600 hover:bg-primary-500 text-white rounded-lg text-sm font-bold transition-all flex items-center gap-2 shadow-lg"
+                      className="text-slate-500 hover:text-primary-400 text-sm font-bold transition-all flex items-center gap-2"
                     >
                        <ExternalLink size={16} /> Channel
                     </a>
                  </div>
               </div>
 
-              {/* Links Columns */}
-              <div className="space-y-4">
-                 <h4 className="text-white font-bold flex items-center gap-2 text-sm uppercase tracking-wider">Product</h4>
-                 <ul className="text-slate-500 text-sm space-y-3">
-                    <li><button onClick={() => navigate('/auth')} className="hover:text-primary-400 transition">Get Started</button></li>
-                    <li><button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="hover:text-primary-400 transition">Features</button></li>
-                    <li><button onClick={() => window.open('https://t.me/tradingvisionpro', '_blank')} className="hover:text-primary-400 transition">Live Signals</button></li>
-                 </ul>
-              </div>
+              {/* Legal Column */}
               <div className="space-y-4">
                  <h4 className="text-white font-bold flex items-center gap-2 text-sm uppercase tracking-wider">Legal</h4>
                  <ul className="text-slate-500 text-sm space-y-3">
@@ -341,6 +337,8 @@ const LandingPage: React.FC<Props> = ({ user }) => {
                     <li><a href="#" className="hover:text-primary-400 transition">Risk Disclosure</a></li>
                  </ul>
               </div>
+
+              {/* Support Column */}
               <div className="space-y-4">
                  <h4 className="text-white font-bold flex items-center gap-2 text-sm uppercase tracking-wider">Support</h4>
                  <ul className="text-slate-500 text-sm space-y-3">
