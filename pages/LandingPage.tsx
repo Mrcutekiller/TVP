@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserProfile, PlanTier, AccountType } from '../types';
 import PlanCard from '../components/PlanCard';
 import UserIdentityCard from '../components/UserIdentityCard';
-import { ArrowRight, BarChart2, Shield, Zap, Instagram, Send, Terminal, Clock, BrainCircuit, ExternalLink, Target } from 'lucide-react';
+import { ArrowRight, BarChart2, Shield, Zap, Instagram, Send, Terminal, Clock, BrainCircuit, ExternalLink, Target, CheckCircle2 } from 'lucide-react';
 
 interface Props {
   user: UserProfile | null;
@@ -250,7 +250,18 @@ const LandingPage: React.FC<Props> = ({ user }) => {
         <h2 className="text-4xl font-bold text-white text-center mb-4">ACCESS TIERS</h2>
         <p className="text-center text-slate-400 mb-20 max-w-2xl mx-auto">Choose your clearance level. Upgrade anytime.</p>
         
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {/* Changed to 4 columns to fit Free plan */}
+        <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-6 max-w-7xl mx-auto">
+          
+          <PlanCard 
+            name="Starter" 
+            price="Free" 
+            tier={PlanTier.FREE}
+            features={['2 Signals / Day', 'Basic Market Structure', 'Standard Support']}
+            missing={['AI Lot Calc', 'Auto-Trade', 'Gold & Indices']}
+            onSelect={() => navigate('/auth')}
+          />
+
           <PlanCard 
             name="Sniper Basic" 
             price="$10" 

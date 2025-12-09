@@ -21,9 +21,10 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
 
   const calculateStrength = (pass: string) => {
     let score = 0;
+    if (pass.length > 0) score = 1;
     if (pass.length > 6) score++;
-    if (pass.match(/[0-9]/)) score++;
-    if (pass.match(/[^a-zA-Z0-9]/)) score++;
+    if (pass.match(/[0-9]/) && pass.match(/[^a-zA-Z0-9]/)) score++;
+    if (pass.length > 10) score = 3;
     setPasswordStrength(score);
   };
 
@@ -193,19 +194,22 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             
             {/* Password Strength Meter */}
             {!isLogin && formData.password.length > 0 && (
-                <div className="flex items-center gap-2 mt-2 px-1">
-                    <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
-                        <div className={`h-full transition-all duration-300 ${passwordStrength >= 1 ? 'bg-red-500' : 'bg-transparent'}`} style={{width: '100%'}}></div>
+                <div className="mt-3">
+                    <div className="flex gap-1 h-1.5 mb-2">
+                        <div className={`flex-1 rounded-full transition-all duration-500 ${passwordStrength >= 1 ? 'bg-red-500' : 'bg-slate-800'}`}></div>
+                        <div className={`flex-1 rounded-full transition-all duration-500 ${passwordStrength >= 2 ? 'bg-yellow-500' : 'bg-slate-800'}`}></div>
+                        <div className={`flex-1 rounded-full transition-all duration-500 ${passwordStrength >= 3 ? 'bg-green-500' : 'bg-slate-800'}`}></div>
                     </div>
-                    <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
-                         <div className={`h-full transition-all duration-300 ${passwordStrength >= 2 ? 'bg-yellow-500' : 'bg-transparent'}`} style={{width: '100%'}}></div>
+                    <div className="flex justify-between items-center px-1">
+                        <span className="text-[10px] uppercase font-bold text-slate-500">Security Level</span>
+                        <span className={`text-[10px] uppercase font-black tracking-wider ${
+                            passwordStrength === 1 ? 'text-red-500' : 
+                            passwordStrength === 2 ? 'text-yellow-500' : 
+                            passwordStrength === 3 ? 'text-green-500' : 'text-slate-500'
+                        }`}>
+                            {passwordStrength === 1 ? 'WEAK' : passwordStrength === 2 ? 'MEDIUM' : passwordStrength === 3 ? 'STRONG' : '...'}
+                        </span>
                     </div>
-                    <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
-                         <div className={`h-full transition-all duration-300 ${passwordStrength >= 3 ? 'bg-green-500' : 'bg-transparent'}`} style={{width: '100%'}}></div>
-                    </div>
-                    <span className="text-[10px] uppercase font-bold text-slate-400">
-                        {passwordStrength === 0 ? 'Weak' : passwordStrength === 1 ? 'Weak' : passwordStrength === 2 ? 'Good' : 'Strong'}
-                    </span>
                 </div>
             )}
           </div>

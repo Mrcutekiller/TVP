@@ -30,9 +30,9 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
   }, [previewUrl]);
 
   const checkLimits = () => {
-    // Check daily limit for Free plan
-    if (user.plan === PlanTier.FREE && user.signalsUsedToday >= 5) {
-      return "Free daily limit reached (5/5). Upgrade to continue.";
+    // Check daily limit for Free plan (2 signals)
+    if (user.plan === PlanTier.FREE && user.signalsUsedToday >= 2) {
+      return "Free daily limit reached (2/2). Upgrade to continue.";
     }
     return null;
   };
@@ -73,6 +73,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
   const simulateLogs = () => {
       setLogMessages([]);
       const messages = [
+          "Initiating Upload Stream...",
           "Connecting to Vision Engine...",
           "Extracting Price Action...",
           "Identifying Support/Resistance...",
@@ -84,7 +85,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
       messages.forEach((msg, i) => {
           setTimeout(() => {
               setLogMessages(prev => [...prev, msg]);
-          }, i * 600);
+          }, i * 500);
       });
   };
 
@@ -98,10 +99,11 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
           return;
       }
 
-      // Generate Preview Immediately
+      // Generate Preview Immediately to show it is working
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
 
+      // Start Analysis State Immediately
       setIsAnalyzing(true);
       setErrorMsg(null);
       setLastSignal(null);
@@ -112,7 +114,6 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
           reader.readAsDataURL(file);
           reader.onloadend = async () => {
               const base64String = reader.result as string;
-              // Extract the base64 data part
               const base64Data = base64String.split(',')[1];
               
               const analysis = await analyzeChartWithGemini(base64Data);
@@ -222,7 +223,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                      <div className="text-right">
                          <p className="text-[10px] font-bold uppercase text-slate-500">Daily Quota</p>
                          <p className={`text-xl font-mono font-bold ${checkLimits() ? 'text-red-500' : 'text-white'}`}>
-                             {user.signalsUsedToday} / {user.plan === PlanTier.FREE ? 5 : '∞'}
+                             {user.signalsUsedToday} / {user.plan === PlanTier.FREE ? 2 : '∞'}
                          </p>
                      </div>
                      <div className="h-10 w-1 bg-slate-800"></div>
@@ -264,10 +265,10 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                            {/* LIVE PREVIEW BACKGROUND */}
                            {previewUrl && (
                                <div className="absolute inset-0 z-0">
-                                   <img src={previewUrl} alt="Chart Scan" className="w-full h-full object-cover opacity-30 blur-sm scale-105 animate-pulse-slow" />
-                                   <div className="absolute inset-0 bg-primary-900/40 mix-blend-overlay"></div>
+                                   <img src={previewUrl} alt="Chart Scan" className="w-full h-full object-cover opacity-40 blur-sm scale-105 animate-pulse-slow" />
+                                   <div className="absolute inset-0 bg-primary-900/60 mix-blend-multiply"></div>
                                    {/* Scanning Line */}
-                                   <div className="absolute top-0 left-0 w-full h-1 bg-primary-400/50 shadow-[0_0_20px_rgba(99,102,241,0.8)] animate-scan z-10"></div>
+                                   <div className="absolute top-0 left-0 w-full h-1 bg-primary-400/80 shadow-[0_0_20px_rgba(99,102,241,0.8)] animate-scan z-10"></div>
                                </div>
                            )}
 
@@ -277,10 +278,10 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                                     <div className="absolute inset-0 border-4 border-primary-500 rounded-full border-t-transparent animate-spin"></div>
                                     <RefreshCw className="absolute inset-0 m-auto text-primary-500 animate-pulse" size={32} />
                                 </div>
-                                <h3 className="text-3xl font-black text-white mb-2 animate-pulse">ANALYZING STRUCTURE</h3>
+                                <h3 className="text-3xl font-black text-white mb-2 animate-pulse tracking-tight">ANALYZING STRUCTURE</h3>
                                 
                                 {/* Terminal Logs */}
-                                <div className="h-20 overflow-hidden flex flex-col items-center justify-end font-mono text-xs text-primary-300 gap-1">
+                                <div className="h-20 w-64 overflow-hidden flex flex-col items-center justify-end font-mono text-xs text-primary-300 gap-1 opacity-80">
                                     {logMessages.slice(-3).map((msg, i) => (
                                         <div key={i} className="animate-in slide-in-from-bottom-2 fade-in">{msg}</div>
                                     ))}
