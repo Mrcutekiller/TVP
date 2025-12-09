@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile, PlanTier, AccountType } from '../types';
-import { Eye, ArrowRight, Mail, Key, UserPlus, LogIn, User } from 'lucide-react';
+import { Eye, ArrowRight, Mail, Key, UserPlus, LogIn, User, CheckCircle } from 'lucide-react';
 
 interface Props {
   onLogin: (user: UserProfile) => void;
@@ -17,6 +17,21 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
     password: ''
   });
   const [error, setError] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(0); // 0-3
+
+  const calculateStrength = (pass: string) => {
+    let score = 0;
+    if (pass.length > 6) score++;
+    if (pass.match(/[0-9]/)) score++;
+    if (pass.match(/[^a-zA-Z0-9]/)) score++;
+    setPasswordStrength(score);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      setFormData({...formData, password: val});
+      calculateStrength(val);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +39,6 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
 
     // --- ADMIN BACKDOOR CHECK ---
     if (formData.email.toLowerCase() === 'birukf37@gmail.com' && formData.password === 'admin20') {
-        // Set a flag for admin session if needed, or just redirect
         localStorage.setItem('tv_admin_auth', 'true');
         navigate('/admin');
         return;
@@ -37,18 +51,15 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             return;
         }
 
-        // 1. Fetch Users "Database"
         const usersStr = localStorage.getItem('tv_users');
         const users: UserProfile[] = usersStr ? JSON.parse(usersStr) : [];
         
-        // 2. Find User (Case insensitive email)
         const foundUser = users.find(u => 
             (u.email && u.email.toLowerCase() === formData.email.toLowerCase()) || 
             (u.username && u.username.toLowerCase() === formData.email.toLowerCase())
         );
 
         if (foundUser) {
-            // 3. Set Session
             localStorage.setItem('tv_session', JSON.stringify(foundUser));
             onLogin(foundUser);
             navigate('/dashboard');
@@ -71,11 +82,9 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             return;
         }
 
-        // 1. Fetch Users "Database"
         const usersStr = localStorage.getItem('tv_users');
         const users: UserProfile[] = usersStr ? JSON.parse(usersStr) : [];
 
-        // 2. Check duplicates
         const exists = users.some(u => 
             (u.email && u.email.toLowerCase() === formData.email.toLowerCase())
         );
@@ -83,8 +92,10 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             setError('This email is already registered.');
             return;
         }
+        
+        // Simulating device info
+        const deviceType = window.innerWidth < 768 ? 'Mobile (iPhone/Android)' : 'Desktop PC';
 
-        // 3. Create User
         const newUser: UserProfile = {
             id: crypto.randomUUID(),
             username: formData.username,
@@ -93,6 +104,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             signalsUsedLifetime: 0,
             signalsUsedToday: 0,
             joinDate: new Date().toISOString(),
+            lastDevice: deviceType,
             settings: {
                 accountSize: 1000,
                 riskPercentage: 1,
@@ -107,11 +119,8 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             tradeHistory: []
         };
 
-        // 4. Save to Database
         users.push(newUser);
         localStorage.setItem('tv_users', JSON.stringify(users));
-
-        // 5. Set Session
         localStorage.setItem('tv_session', JSON.stringify(newUser));
         
         onLogin(newUser);
@@ -178,9 +187,27 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
                 placeholder="••••••••"
                 className="w-full bg-slate-950/80 border border-slate-700 rounded-xl py-3 pl-12 pr-4 text-white placeholder-slate-600 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 transition-all font-sans"
                 value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                onChange={handlePasswordChange}
               />
             </div>
+            
+            {/* Password Strength Meter */}
+            {!isLogin && formData.password.length > 0 && (
+                <div className="flex items-center gap-2 mt-2 px-1">
+                    <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                        <div className={`h-full transition-all duration-300 ${passwordStrength >= 1 ? 'bg-red-500' : 'bg-transparent'}`} style={{width: '100%'}}></div>
+                    </div>
+                    <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                         <div className={`h-full transition-all duration-300 ${passwordStrength >= 2 ? 'bg-yellow-500' : 'bg-transparent'}`} style={{width: '100%'}}></div>
+                    </div>
+                    <div className="flex-1 h-1 bg-slate-800 rounded-full overflow-hidden">
+                         <div className={`h-full transition-all duration-300 ${passwordStrength >= 3 ? 'bg-green-500' : 'bg-transparent'}`} style={{width: '100%'}}></div>
+                    </div>
+                    <span className="text-[10px] uppercase font-bold text-slate-400">
+                        {passwordStrength === 0 ? 'Weak' : passwordStrength === 1 ? 'Weak' : passwordStrength === 2 ? 'Good' : 'Strong'}
+                    </span>
+                </div>
+            )}
           </div>
 
           {error && (
@@ -207,6 +234,7 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
               setIsLogin(!isLogin);
               setError('');
               setFormData({ email: '', password: '', username: '' });
+              setPasswordStrength(0);
             }}
             className="text-slate-400 text-sm hover:text-white transition-colors flex items-center justify-center gap-2 mx-auto hover:underline decoration-primary-500 underline-offset-4"
           >

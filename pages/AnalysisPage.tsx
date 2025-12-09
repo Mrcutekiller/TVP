@@ -20,6 +20,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCopied, setIsCopied] = useState(false);
+  const [logMessages, setLogMessages] = useState<string[]>([]);
 
   // Cleanup preview URL on unmount
   useEffect(() => {
@@ -53,12 +54,10 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
     const riskAmount = user.settings.accountSize * (user.settings.riskPercentage / 100);
     
     // Estimate Lot Size
-    // Formula: Risk = Pips * PipValue * Lots
-    // We assume Standard Lot ($10/pip approx for USD pairs)
     let pipValue = 10; 
     
-    // Adjust pip value roughly for symbol types (simplified for demo)
-    if (isGold) pipValue = 1; // 1 standard lot gold = $1 per tick/pip usually.
+    // Adjust pip value roughly for symbol types
+    if (isGold) pipValue = 1; 
     
     let lots = 0;
     if (slPips > 0) {
@@ -69,6 +68,24 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
     if (lots < 0.01) lots = 0.01;
 
     return { lots, slPips };
+  };
+
+  const simulateLogs = () => {
+      setLogMessages([]);
+      const messages = [
+          "Connecting to Vision Engine...",
+          "Extracting Price Action...",
+          "Identifying Support/Resistance...",
+          "Detecting Order Blocks...",
+          "Calculating Invalidation Level...",
+          "Optimizing Risk/Reward...",
+          "Signal Generated."
+      ];
+      messages.forEach((msg, i) => {
+          setTimeout(() => {
+              setLogMessages(prev => [...prev, msg]);
+          }, i * 600);
+      });
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,6 +105,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
       setIsAnalyzing(true);
       setErrorMsg(null);
       setLastSignal(null);
+      simulateLogs();
 
       try {
           const reader = new FileReader();
@@ -165,7 +183,6 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
           setErrorMsg(err.message || "Failed to analyze chart.");
       } finally {
           setIsAnalyzing(false);
-          // Reset file input
           if (fileInputRef.current) fileInputRef.current.value = '';
       }
   };
@@ -174,6 +191,7 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
     setLastSignal(null);
     setPreviewUrl(null);
     setErrorMsg(null);
+    setLogMessages([]);
   }
 
   const copyToClipboard = () => {
@@ -253,16 +271,20 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                                </div>
                            )}
 
-                            <div className="text-center z-20 relative bg-slate-950/60 p-8 rounded-3xl backdrop-blur-md border border-white/10 shadow-2xl">
-                                <div className="relative w-20 h-20 mx-auto mb-8">
+                            <div className="text-center z-20 relative bg-slate-950/80 p-8 rounded-3xl backdrop-blur-md border border-white/10 shadow-2xl">
+                                <div className="relative w-20 h-20 mx-auto mb-4">
                                     <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
                                     <div className="absolute inset-0 border-4 border-primary-500 rounded-full border-t-transparent animate-spin"></div>
                                     <RefreshCw className="absolute inset-0 m-auto text-primary-500 animate-pulse" size={32} />
                                 </div>
                                 <h3 className="text-3xl font-black text-white mb-2 animate-pulse">ANALYZING STRUCTURE</h3>
-                                <p className="text-primary-300 font-mono text-sm bg-primary-900/30 px-3 py-1 rounded-full inline-block">
-                                   Reading Price Action Data...
-                                </p>
+                                
+                                {/* Terminal Logs */}
+                                <div className="h-20 overflow-hidden flex flex-col items-center justify-end font-mono text-xs text-primary-300 gap-1">
+                                    {logMessages.slice(-3).map((msg, i) => (
+                                        <div key={i} className="animate-in slide-in-from-bottom-2 fade-in">{msg}</div>
+                                    ))}
+                                </div>
                             </div>
                         </>
                     ) : (

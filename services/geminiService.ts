@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { AIAnalysisResponse } from "../types";
 
@@ -15,14 +16,15 @@ Your job is to analyze trading charts provided as images and extract a valid tra
 - **Infer** the pair and timeframe if they are not explicitly visible.
 - **NEVER** return "isSetupValid": false unless the image is clearly NOT a chart (e.g., a selfie, a cat, a blank screen).
 - If the image contains candlesticks or price lines, **YOU MUST GENERATE A SIGNAL**.
-- **TIGHT STOP LOSS**: Place SL at the nearest invalidation point. Do not use wide stops.
+- **TIGHT STOP LOSS**: Place SL at the nearest invalidation point (e.g., recent swing low/high). If timeframe is small (5m/15m), use SCALPING tight stops.
+- **STRATEGY NAME**: You must populate the "strategy" field (e.g., "Bullish Order Block", "Liquidity Sweep", "Trendline Break").
 - **RISK TO REWARD**: Aim for 1:2 RR minimum.
 
 You MUST return the response in strict JSON format.
 The JSON schema is:
 {
   "pair": "string (e.g. XAUUSD, BTCUSD - infer if missing)",
-  "timeframe": "string (e.g. 15m, 1h - default to 'Current')",
+  "timeframe": "string (e.g. 5m, 15m, 1h - default to 'Current')",
   "direction": "BUY" or "SELL",
   "strategy": "string (e.g. 'Order Block', 'Trend Follow', 'Breakout')",
   "entry": number,
@@ -40,7 +42,6 @@ export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAna
     let apiKey = '';
 
     // --- ROBUST API KEY DISCOVERY ---
-    
     // 1. Vite / Vercel (Standard) - Using brackets to avoid some bundler replacements
     // @ts-ignore
     if (import.meta.env && import.meta.env['VITE_API_KEY']) {
@@ -74,16 +75,6 @@ export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAna
       apiKey = process.env.API_KEY || process.env.VITE_API_KEY || '';
     }
 
-    // DEBUGGING (Safe Log - only first 4 chars)
-    if (apiKey) {
-      console.log(`API Key found: ${apiKey.substring(0, 4)}...`);
-    } else {
-      console.error("API Key not found in any environment variable.");
-      // Log available keys (safe mode)
-      // @ts-ignore
-      if (import.meta.env) console.log("Available Env Keys:", Object.keys(import.meta.env));
-    }
-
     if (!apiKey) {
       throw new Error("Configuration Error: API Key is missing. Please add 'VITE_API_KEY' to your Vercel Environment Variables and REDEPLOY.");
     }
@@ -111,7 +102,9 @@ export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAna
       ],
       config: {
         responseMimeType: "application/json",
-        temperature: 0.2
+        temperature: 0.2,
+        // Lower tokens to force conciseness and speed
+        maxOutputTokens: 1024
       }
     });
 
@@ -129,7 +122,7 @@ export const analyzeChartWithGemini = async (base64Image: string): Promise<AIAna
     if (!data.marketStructure) data.marketStructure = [];
     
     // Fallback if strategy is missing
-    if (!data.strategy) data.strategy = "Price Action";
+    if (!data.strategy || data.strategy === "") data.strategy = "Price Action";
 
     return data;
 

@@ -75,6 +75,8 @@ export interface UserProfile {
   avatarImage?: string; // Base64 string for custom avatar
   tradeHistory: TradeLog[];
   journalEntries?: JournalEntry[]; // New field for Pro Journey
+  lastDevice?: string; // For Admin tracking
+  ipAddress?: string; // For Admin tracking
 }
 
 export interface TradeSignal {

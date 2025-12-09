@@ -4,9 +4,20 @@ import { UserProfile, PlanTier } from '../types';
 import { 
   Shield, Search, Users, Activity, CreditCard, LogOut, RefreshCw, X, 
   Database, Globe, DollarSign, Terminal, Filter, ChevronDown, CheckCircle2,
-  AlertTriangle, Lock, Cpu, BarChart3, Server
+  AlertTriangle, Lock, Cpu, BarChart3, Server, Smartphone, Laptop, Tablet
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const MOCK_USERS_SEED: Partial<UserProfile>[] = [
+  { username: 'CryptoKing99', email: 'alex@crypto.com', plan: PlanTier.PRO, settings: { accountSize: 50000, riskPercentage: 2, accountType: 'Raw' } as any, lastDevice: 'iPhone 14 Pro', joinDate: '2024-02-10T10:00:00Z' },
+  { username: 'SarahTrades', email: 'sarah.t@gmail.com', plan: PlanTier.FREE, settings: { accountSize: 500, riskPercentage: 1, accountType: 'Standard' } as any, lastDevice: 'Windows PC', joinDate: '2024-03-01T14:30:00Z' },
+  { username: 'SniperWolf', email: 'wolf@trading.net', plan: PlanTier.ADVANCED, settings: { accountSize: 10000, riskPercentage: 1.5, accountType: 'Pro' } as any, lastDevice: 'Samsung S23', joinDate: '2024-01-15T09:20:00Z' },
+  { username: 'ForexMaster', email: 'mike@fx.com', plan: PlanTier.PRO, settings: { accountSize: 250000, riskPercentage: 0.5, accountType: 'Raw' } as any, lastDevice: 'MacBook Pro', joinDate: '2023-11-05T16:45:00Z' },
+  { username: 'NewbieTrader', email: 'john.doe@aol.com', plan: PlanTier.FREE, settings: { accountSize: 100, riskPercentage: 5, accountType: 'Standard' } as any, lastDevice: 'iPad Air', joinDate: '2024-03-10T11:10:00Z' },
+  { username: 'GoldBug', email: 'goldie@invest.com', plan: PlanTier.BASIC, settings: { accountSize: 2000, riskPercentage: 2, accountType: 'Standard' } as any, lastDevice: 'Android Tablet', joinDate: '2024-02-20T08:00:00Z' },
+  { username: 'WhaleWatcher', email: 'ocean@fund.com', plan: PlanTier.PRO, settings: { accountSize: 1000000, riskPercentage: 1, accountType: 'Pro' } as any, lastDevice: 'Linux Desktop', joinDate: '2023-12-01T10:00:00Z' },
+  { username: 'ScalpGod', email: 'fast@fingers.io', plan: PlanTier.ADVANCED, settings: { accountSize: 5000, riskPercentage: 3, accountType: 'Raw' } as any, lastDevice: 'iPhone 13', joinDate: '2024-01-28T13:15:00Z' },
+];
 
 const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
@@ -50,9 +61,36 @@ const AdminPanel: React.FC = () => {
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
+  const seedMockUsers = (currentUsers: UserProfile[]) => {
+      // Only seed if DB is mostly empty (e.g. just the admin or 1-2 test users)
+      if (currentUsers.length < 5) {
+          const newMockUsers = MOCK_USERS_SEED.map(seed => ({
+              ...seed,
+              id: crypto.randomUUID(),
+              signalsUsedLifetime: Math.floor(Math.random() * 500),
+              signalsUsedToday: Math.floor(Math.random() * 10),
+              idTheme: 'cyan',
+              tradeHistory: [],
+              settings: {
+                  ...seed.settings,
+                  notifications: { signals: true, marketAlerts: true, updates: true }
+              }
+          } as UserProfile));
+
+          const merged = [...currentUsers, ...newMockUsers];
+          localStorage.setItem('tv_users', JSON.stringify(merged));
+          return merged;
+      }
+      return currentUsers;
+  };
+
   const loadDatabase = () => {
       const usersStr = localStorage.getItem('tv_users');
-      const loadedUsers: UserProfile[] = usersStr ? JSON.parse(usersStr) : [];
+      let loadedUsers: UserProfile[] = usersStr ? JSON.parse(usersStr) : [];
+      
+      // Auto-Seed for Demo Purposes so Admin sees data
+      loadedUsers = seedMockUsers(loadedUsers);
+
       setUsers(loadedUsers);
       calculateStats(loadedUsers);
   };
@@ -68,7 +106,7 @@ const AdminPanel: React.FC = () => {
           basic,
           advanced,
           pro,
-          mrr: (basic * 14) + (advanced * 20) + (pro * 30)
+          mrr: (basic * 10) + (advanced * 20) + (pro * 30)
       });
   };
 
@@ -161,6 +199,14 @@ const AdminPanel: React.FC = () => {
       return true;
   });
 
+  const getDeviceIcon = (deviceStr?: string) => {
+      if (!deviceStr) return <Globe size={14} />;
+      const d = deviceStr.toLowerCase();
+      if (d.includes('iphone') || d.includes('android') || d.includes('pixel') || d.includes('samsung')) return <Smartphone size={14} />;
+      if (d.includes('ipad') || d.includes('tablet')) return <Tablet size={14} />;
+      return <Laptop size={14} />;
+  };
+
   // --- LOGIN SCREEN ---
   if (!isAuthenticated) {
     return (
@@ -252,7 +298,7 @@ const AdminPanel: React.FC = () => {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                     </span>
-                    <span className="text-xs font-bold text-green-500">SYSTEM STABLE</span>
+                    <span className="text-xs font-bold text-green-500">Global Database Connected</span>
                 </div>
                 <button 
                     onClick={loadDatabase} 
@@ -395,6 +441,7 @@ const AdminPanel: React.FC = () => {
                             <tr className="text-slate-500 text-[10px] uppercase tracking-wider">
                                 <th className="p-4 font-bold border-b border-slate-800">Identity</th>
                                 <th className="p-4 font-bold border-b border-slate-800">Status</th>
+                                <th className="p-4 font-bold border-b border-slate-800">Device</th>
                                 <th className="p-4 font-bold border-b border-slate-800">Financials</th>
                                 <th className="p-4 font-bold border-b border-slate-800 text-right">Expiration</th>
                                 <th className="p-4 font-bold border-b border-slate-800 text-center">Action</th>
@@ -402,7 +449,7 @@ const AdminPanel: React.FC = () => {
                         </thead>
                         <tbody className="divide-y divide-slate-800/50 text-sm">
                             {filteredUsers.length === 0 ? (
-                                <tr><td colSpan={5} className="p-12 text-center text-slate-500 italic">No operatives found in this sector.</td></tr>
+                                <tr><td colSpan={6} className="p-12 text-center text-slate-500 italic">No operatives found in this sector.</td></tr>
                             ) : (
                                 filteredUsers.map(u => (
                                     <tr key={u.id} className="hover:bg-slate-800/30 transition-colors group">
@@ -430,10 +477,16 @@ const AdminPanel: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="p-4">
+                                            <div className="flex items-center gap-2 text-slate-400 text-xs">
+                                                {getDeviceIcon(u.lastDevice)}
+                                                <span className="hidden md:inline">{u.lastDevice || 'Unknown'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="p-4">
                                             <div className="font-mono text-slate-300 text-xs">
                                                 ${u.settings.accountSize.toLocaleString()}
                                                 <span className="text-slate-600 mx-2">|</span>
-                                                <span className="text-red-400">{u.settings.riskPercentage}% Risk</span>
+                                                <span className="text-red-400">{u.settings.riskPercentage}%</span>
                                             </div>
                                         </td>
                                         <td className="p-4 text-right">
@@ -535,7 +588,10 @@ const AdminPanel: React.FC = () => {
                        </div>
                        <div>
                            <p className="text-white font-bold">{selectedUser.username}</p>
-                           <p className="text-xs text-slate-500 font-mono">{selectedUser.email}</p>
+                           <p className="text-xs text-slate-500 font-mono flex items-center gap-2">
+                               {selectedUser.email} 
+                               <span className="text-[10px] px-1 bg-slate-800 rounded">{selectedUser.lastDevice || 'Unknown'}</span>
+                           </p>
                        </div>
                    </div>
 

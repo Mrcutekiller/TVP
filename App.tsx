@@ -11,7 +11,7 @@ import IdentityPage from './pages/IdentityPage';
 import TradingJourney from './components/TradingJourney';
 import JournalPage from './pages/JournalPage'; 
 import Sidebar from './components/Sidebar';
-import { UserProfile, AccountType } from './types';
+import { UserProfile, AccountType, PlanTier } from './types';
 import { Settings, Save, CheckCircle2, Bell } from 'lucide-react';
 
 const LogsPageWrapper: React.FC<{user: UserProfile, updateUser: any}> = ({user, updateUser}) => {
@@ -207,9 +207,21 @@ const App: React.FC = () => {
         if (dbStr) {
             const db: UserProfile[] = JSON.parse(dbStr);
             const masterRecord = db.find(u => u.id === currentUser.id);
+            
+            // Check expiry
             if (masterRecord) {
-                currentUser = masterRecord;
-                localStorage.setItem('tv_session', JSON.stringify(currentUser));
+               if (masterRecord.planExpiryDate && new Date(masterRecord.planExpiryDate) < new Date()) {
+                  masterRecord.plan = PlanTier.FREE; // Auto Downgrade
+                  masterRecord.planExpiryDate = undefined;
+                  
+                  // Update DB with downgrade
+                  const index = db.findIndex(u => u.id === masterRecord.id);
+                  db[index] = masterRecord;
+                  localStorage.setItem('tv_users', JSON.stringify(db));
+               }
+               
+               currentUser = masterRecord;
+               localStorage.setItem('tv_session', JSON.stringify(currentUser));
             }
         }
         setUser(currentUser);
