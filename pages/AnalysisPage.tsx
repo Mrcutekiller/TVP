@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { UserProfile, TradeSignal, PlanTier, TradeLog, AIAnalysisResponse } from '../types';
 import Sidebar from '../components/Sidebar';
 import { analyzeChartWithGemini } from '../services/geminiService';
 import { 
   Upload, RefreshCw, Check, Copy, AlertTriangle, 
-  Target, Shield, BrainCircuit, Microscope, X
+  Target, Shield, BrainCircuit, Microscope, X, Lock
 } from 'lucide-react';
 
 interface Props {
@@ -16,8 +17,16 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [lastSignal, setLastSignal] = useState<TradeSignal | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Cleanup preview URL on unmount
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const checkLimits = () => {
     // Check daily limit for Free plan
@@ -72,6 +81,10 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
           return;
       }
 
+      // Generate Preview Immediately
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+
       setIsAnalyzing(true);
       setErrorMsg(null);
       setLastSignal(null);
@@ -88,6 +101,12 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
               
               if (!analysis || !analysis.isSetupValid) {
                   throw new Error(analysis.reasoning || "Invalid setup detected.");
+              }
+
+              // --- PLAN RESTRICTION: BASIC USERS CANNOT TRADE GOLD ---
+              const isGoldPair = analysis.pair.toUpperCase().includes('XAU') || analysis.pair.toUpperCase().includes('GOLD');
+              if (user.plan === PlanTier.BASIC && isGoldPair) {
+                  throw new Error("Gold trading is restricted on Sniper Basic. Please upgrade to Advanced or Pro.");
               }
 
               // Calculate Risk Parameters
@@ -151,6 +170,12 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
       }
   };
 
+  const clearAnalysis = () => {
+    setLastSignal(null);
+    setPreviewUrl(null);
+    setErrorMsg(null);
+  }
+
   const copyToClipboard = () => {
       if (!lastSignal) return;
       const text = `SIGNAL: ${lastSignal.direction} ${lastSignal.pair}\nENTRY: ${lastSignal.entry}\nSL: ${lastSignal.sl}\nTP1: ${lastSignal.tp1}\nTP2: ${lastSignal.tp2}\nLOTS: ${lastSignal.lotSize}`;
@@ -158,6 +183,8 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
   };
+
+  const isFree = user.plan === PlanTier.FREE;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col md:flex-row font-sans">
@@ -215,15 +242,29 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                     <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none"></div>
 
                     {isAnalyzing ? (
-                        <div className="text-center z-10">
-                            <div className="relative w-20 h-20 mx-auto mb-8">
-                                <div className="absolute inset-0 border-4 border-slate-800 rounded-full"></div>
-                                <div className="absolute inset-0 border-4 border-primary-500 rounded-full border-t-transparent animate-spin"></div>
-                                <RefreshCw className="absolute inset-0 m-auto text-primary-500 animate-pulse" size={32} />
+                        <>
+                           {/* LIVE PREVIEW BACKGROUND */}
+                           {previewUrl && (
+                               <div className="absolute inset-0 z-0">
+                                   <img src={previewUrl} alt="Chart Scan" className="w-full h-full object-cover opacity-30 blur-sm scale-105 animate-pulse-slow" />
+                                   <div className="absolute inset-0 bg-primary-900/40 mix-blend-overlay"></div>
+                                   {/* Scanning Line */}
+                                   <div className="absolute top-0 left-0 w-full h-1 bg-primary-400/50 shadow-[0_0_20px_rgba(99,102,241,0.8)] animate-scan z-10"></div>
+                               </div>
+                           )}
+
+                            <div className="text-center z-20 relative bg-slate-950/60 p-8 rounded-3xl backdrop-blur-md border border-white/10 shadow-2xl">
+                                <div className="relative w-20 h-20 mx-auto mb-8">
+                                    <div className="absolute inset-0 border-4 border-slate-700 rounded-full"></div>
+                                    <div className="absolute inset-0 border-4 border-primary-500 rounded-full border-t-transparent animate-spin"></div>
+                                    <RefreshCw className="absolute inset-0 m-auto text-primary-500 animate-pulse" size={32} />
+                                </div>
+                                <h3 className="text-3xl font-black text-white mb-2 animate-pulse">ANALYZING STRUCTURE</h3>
+                                <p className="text-primary-300 font-mono text-sm bg-primary-900/30 px-3 py-1 rounded-full inline-block">
+                                   Reading Price Action Data...
+                                </p>
                             </div>
-                            <h3 className="text-3xl font-black text-white mb-2 animate-pulse">ANALYZING MARKET DATA</h3>
-                            <p className="text-primary-400 font-mono text-sm">Identifying Order Blocks & Liquidity...</p>
-                        </div>
+                        </>
                     ) : (
                         <div className="text-center z-10 group-hover:scale-105 transition-transform duration-300">
                             <div className="w-24 h-24 bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-2xl border border-slate-800 group-hover:border-primary-500 group-hover:shadow-primary-500/30 transition-all">
@@ -241,6 +282,24 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                  </div>
              ) : (
                  <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+                     
+                     {/* Action Bar */}
+                     <div className="flex justify-between items-center mb-6">
+                         <button 
+                            onClick={clearAnalysis}
+                            className="text-sm font-bold text-slate-400 hover:text-white flex items-center gap-2 transition"
+                         >
+                            <RefreshCw size={14}/> Clear Analysis
+                         </button>
+                         <button 
+                           onClick={copyToClipboard}
+                           className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg text-sm font-bold transition border border-slate-700 hover:border-slate-500"
+                         >
+                            {isCopied ? <Check size={14} className="text-success"/> : <Copy size={14}/>}
+                            {isCopied ? 'Copied to Clipboard' : 'Copy Intel'}
+                         </button>
+                     </div>
+
                      <div className="grid lg:grid-cols-2 gap-8">
                          
                          {/* LEFT: SIGNAL TICKET */}
@@ -257,13 +316,10 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                                      <span className={`px-4 py-1.5 rounded-lg text-sm font-black uppercase tracking-wider ${lastSignal.direction === 'BUY' ? 'bg-green-500 text-black' : 'bg-red-500 text-white'}`}>
                                          {lastSignal.direction} SIGNAL
                                      </span>
+                                     <div className="mt-2 text-primary-400 font-mono text-xs font-bold uppercase flex items-center gap-2">
+                                        <BrainCircuit size={12}/> Strategy: {lastSignal.strategy || 'Standard Price Action'}
+                                     </div>
                                  </div>
-                                 <button 
-                                    onClick={() => setLastSignal(null)}
-                                    className="p-3 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition"
-                                 >
-                                     <RefreshCw size={20} />
-                                 </button>
                              </div>
 
                              <div className="grid grid-cols-2 gap-4 mb-8">
@@ -288,26 +344,24 @@ const AnalysisPage: React.FC<Props> = ({ user, updateUser }) => {
                                  <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/5 border border-green-500/10">
                                      <div className="flex items-center gap-3">
                                          <div className="p-2 bg-green-500/10 rounded-lg text-green-500"><Target size={18}/></div>
-                                         <span className="text-sm font-bold text-slate-300">TP 1 (Conservative)</span>
+                                         <span className="text-sm font-bold text-slate-300">Target 1 <span className="text-[10px] text-green-400 bg-green-500/10 px-1 rounded ml-1">1:1</span></span>
                                      </div>
                                      <span className="font-mono font-bold text-green-500">{lastSignal.tp1}</span>
                                  </div>
-                                 <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/5 border border-green-500/10">
+                                 <div className={`flex justify-between items-center p-3 rounded-lg border relative overflow-hidden ${isFree ? 'bg-slate-950 border-slate-800' : 'bg-green-500/5 border border-green-500/10'}`}>
+                                     {isFree && (
+                                        <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center z-10 gap-2">
+                                            <Lock size={12} className="text-slate-500" />
+                                            <span className="text-[10px] font-bold text-slate-500 uppercase">Pro Feature</span>
+                                        </div>
+                                     )}
                                      <div className="flex items-center gap-3">
-                                         <div className="p-2 bg-green-500/10 rounded-lg text-green-500"><Target size={18}/></div>
-                                         <span className="text-sm font-bold text-slate-300">TP 2 (Extended)</span>
+                                         <div className={`p-2 rounded-lg ${isFree ? 'bg-slate-800 text-slate-500' : 'bg-green-500/10 text-green-500'}`}><Target size={18}/></div>
+                                         <span className={`text-sm font-bold ${isFree ? 'text-slate-500' : 'text-slate-300'}`}>Target 2 <span className={`text-[10px] px-1 rounded ml-1 ${isFree ? 'text-slate-600 bg-slate-800' : 'text-green-400 bg-green-500/10'}`}>1:2</span></span>
                                      </div>
-                                     <span className="font-mono font-bold text-green-500">{lastSignal.tp2}</span>
+                                     <span className={`font-mono font-bold ${isFree ? 'text-slate-600' : 'text-green-500'}`}>{lastSignal.tp2}</span>
                                  </div>
                              </div>
-
-                             <button 
-                                onClick={copyToClipboard}
-                                className="w-full mt-8 py-4 bg-white hover:bg-slate-200 text-black font-black rounded-xl transition shadow-xl flex items-center justify-center gap-2"
-                             >
-                                {isCopied ? <Check size={20} /> : <Copy size={20} />}
-                                {isCopied ? 'COPIED TO CLIPBOARD' : 'COPY PARAMETERS'}
-                             </button>
                          </div>
 
                          {/* RIGHT: REASONING & RISK */}

@@ -119,8 +119,9 @@ const Sidebar: React.FC<Props> = ({ user }) => {
                   // Clean up legacy key if it exists
                   localStorage.removeItem('sniper_user');
                   
-                  window.location.href = '#/'; 
-                  window.location.reload(); 
+                  // Redirect to Landing Page
+                  window.location.href = '#/';
+                  window.location.reload();
                }}
                className="w-full flex items-center justify-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition py-3 rounded-xl hover:bg-white/5 group"
             >

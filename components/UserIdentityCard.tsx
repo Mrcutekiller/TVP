@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { UserProfile } from '../types';
 import { Shield, Copy, Check, QrCode, Crown, Fingerprint, Share2, Download, Link as LinkIcon, X, Camera, User } from 'lucide-react';
+import html2canvas from 'html2canvas';
 
 interface Props {
   user: UserProfile;
@@ -91,6 +92,7 @@ const UserIdentityCard: React.FC<Props> = ({ user, isTeamMember, theme, showCont
   const [isHovered, setIsHovered] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   const activeThemeKey = isTeamMember 
     ? (user.settings.accountType === 'Pro' ? 'founder' : 'ceo') 
@@ -146,6 +148,47 @@ const UserIdentityCard: React.FC<Props> = ({ user, isTeamMember, theme, showCont
         onAvatarUpload(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDownloadSnapshot = async () => {
+    if (!cardRef.current) return;
+    setIsDownloading(true);
+
+    // Save original styles
+    const originalTransform = cardRef.current.style.transform;
+    const originalTransition = cardRef.current.style.transition;
+    
+    // Flatten for capture
+    cardRef.current.style.transform = 'none';
+    cardRef.current.style.transition = 'none';
+
+    // Wait for render update
+    await new Promise(r => setTimeout(r, 100));
+
+    try {
+        const canvas = await html2canvas(cardRef.current, {
+            backgroundColor: null,
+            scale: 2, // High resolution
+            useCORS: true, // Allow cross-origin images (avatar)
+            logging: false,
+            allowTaint: true
+        });
+
+        // Generate Link
+        const link = document.createElement('a');
+        link.download = `TradeVision_ID_${user.username.toUpperCase()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+    } catch (err) {
+        console.error("ID Capture Error:", err);
+        alert("Failed to create snapshot. Please try again.");
+    } finally {
+        // Restore 3D effect
+        cardRef.current.style.transform = originalTransform;
+        cardRef.current.style.transition = originalTransition;
+        setIsDownloading(false);
     }
   };
 
@@ -367,10 +410,15 @@ const UserIdentityCard: React.FC<Props> = ({ user, isTeamMember, theme, showCont
               {/* Download Section */}
               <button 
                 className="w-full flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary-500/30 py-3 rounded-lg text-sm font-bold text-slate-300 hover:text-white transition-all group"
-                onClick={() => alert("Snapshot downloaded (Simulation)")}
+                onClick={handleDownloadSnapshot}
+                disabled={isDownloading}
               >
-                 <Download size={16} className="text-slate-500 group-hover:text-primary-500 transition-colors" />
-                 Download Holographic Snapshot
+                 {isDownloading ? (
+                   <div className="w-4 h-4 border-2 border-slate-400 border-t-white rounded-full animate-spin"></div>
+                 ) : (
+                   <Download size={16} className="text-slate-500 group-hover:text-primary-500 transition-colors" />
+                 )}
+                 {isDownloading ? 'Generating...' : 'Download Holographic Snapshot'}
               </button>
 
            </div>

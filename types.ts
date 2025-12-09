@@ -66,6 +66,7 @@ export interface UserProfile {
   username: string;
   email?: string;
   plan: PlanTier;
+  planExpiryDate?: string; // Added field for subscription expiration tracking
   signalsUsedLifetime: number; // For free plan
   signalsUsedToday: number;
   joinDate: string;

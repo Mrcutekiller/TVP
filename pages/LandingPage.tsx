@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserProfile, PlanTier, AccountType } from '../types';
 import PlanCard from '../components/PlanCard';
 import UserIdentityCard from '../components/UserIdentityCard';
-import { ArrowRight, BarChart2, Shield, Zap, Instagram, Send, Terminal, Cpu, BookOpen, FileText, AlertCircle, HelpCircle, Target, Clock, BrainCircuit, ExternalLink } from 'lucide-react';
+import { ArrowRight, BarChart2, Shield, Zap, Instagram, Send, Terminal, Clock, BrainCircuit, ExternalLink, Target } from 'lucide-react';
 
 interface Props {
   user: UserProfile | null;
@@ -221,6 +221,30 @@ const LandingPage: React.FC<Props> = ({ user }) => {
          </div>
       </section>
 
+      {/* How It Works */}
+      <section className="py-20 bg-slate-950 border-t border-white/5">
+        <div className="container mx-auto px-6">
+          <h2 className="text-3xl font-bold text-white text-center mb-16">SYSTEM WORKFLOW</h2>
+          <div className="grid md:grid-cols-3 gap-12 relative">
+             <div className="hidden md:block absolute top-12 left-[16%] right-[16%] h-0.5 bg-gradient-to-r from-transparent via-primary-500/50 to-transparent"></div>
+             
+             {[
+               { step: '01', title: 'Upload Data', desc: 'Drag and drop chart screenshots directly into the analysis terminal.' },
+               { step: '02', title: 'AI Processing', desc: 'System identifies Order Blocks, FVG, and Liquidity Pools instantly.' },
+               { step: '03', title: 'Execution', desc: 'Receive precision entry, SL, and TP targets with risk calculations.' }
+             ].map((s, i) => (
+               <div key={i} className="relative z-10 text-center">
+                  <div className="w-24 h-24 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+                     <span className="text-3xl font-black text-primary-500">{s.step}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">{s.title}</h3>
+                  <p className="text-slate-400 text-sm max-w-xs mx-auto">{s.desc}</p>
+               </div>
+             ))}
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section className="py-32 container mx-auto px-6">
         <h2 className="text-4xl font-bold text-white text-center mb-4">ACCESS TIERS</h2>
@@ -229,26 +253,27 @@ const LandingPage: React.FC<Props> = ({ user }) => {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           <PlanCard 
             name="Sniper Basic" 
-            price="$14" 
+            price="$10" 
             tier={PlanTier.BASIC}
-            features={['5 Signals / Day', 'AI Lot Calculation', 'Basic Pairs + Gold']}
-            missing={['Auto-Trade', 'Advanced Analysis', 'Crypto & Indices']}
+            features={['5 Signals / Day', 'AI Lot Calculation', 'Basic Pairs (No Gold)']}
+            missing={['Gold Trading', 'Advanced Analysis', 'Crypto & Indices']}
             onSelect={() => window.open(`https://t.me/Prodbynatyy?text=I want to upgrade to Sniper Basic`, '_blank')}
           />
           <PlanCard 
             name="Sniper Advanced" 
-            price="$29" 
+            price="$20" 
             tier={PlanTier.ADVANCED}
             recommended={true}
-            features={['20 Signals / Day', 'AI Lot Calculation', 'All Pairs + Gold + Indices', 'Live Chart', 'Backtesting']}
-            missing={['Auto-Trade']}
+            features={['20 Signals / Day', 'AI Lot Calculation', 'All Pairs + Gold + Indices', 'Live Chart']}
+            missing={['Backtesting', 'Auto-Trade']}
             onSelect={() => window.open(`https://t.me/Prodbynatyy?text=I want to upgrade to Sniper Advanced`, '_blank')}
           />
           <PlanCard 
             name="Sniper Pro" 
-            price="$49" 
+            price="$30" 
             tier={PlanTier.PRO}
-            features={['Unlimited Signals', 'All Markets (Crypto inc.)', 'Full AI Analysis', 'Auto-Trade (Beta Access)']}
+            features={['Unlimited Signals', 'All Markets (Crypto inc.)', 'Full AI Analysis', 'Priority Support']}
+            missing={['Auto-Trade']}
             onSelect={() => window.open(`https://t.me/Prodbynatyy?text=I want to upgrade to Sniper Pro`, '_blank')}
           />
         </div>
