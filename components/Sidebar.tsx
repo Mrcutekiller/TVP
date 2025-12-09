@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { UserProfile } from '../types';
-import { LayoutGrid, History, Settings, User as UserIcon, LogOut, ScanLine, Hexagon, Menu, X } from 'lucide-react';
+import { LayoutGrid, History, Settings, User as UserIcon, LogOut, ScanLine, Hexagon, Menu, X, BookOpen } from 'lucide-react';
 
 interface Props {
   user: UserProfile;
@@ -84,7 +85,12 @@ const Sidebar: React.FC<Props> = ({ user }) => {
             <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Workspace</p>
             <NavItem path="/dashboard" icon={LayoutGrid} label="Command Center" />
             <NavItem path="/analysis" icon={ScanLine} label="AI Analysis" />
-            <NavItem path="/journey" icon={History} label="Trade Logs" />
+            
+            <div className="my-8 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+            <p className="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Performance</p>
+            <NavItem path="/logs" icon={History} label="Trade Logs" />
+            <NavItem path="/journey" icon={BookOpen} label="My Journey" />
             
             <div className="my-8 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
             

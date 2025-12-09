@@ -17,7 +17,6 @@ interface Props {
 
 const Dashboard: React.FC<Props> = ({ user, updateUser }) => {
   const navigate = useNavigate();
-
   // --- Real-time Chart Logic ---
   const [chartData, setChartData] = useState<{time: number, price: number}[]>(() => {
     return Array.from({ length: 50 }, (_, i) => ({
@@ -33,6 +32,15 @@ const Dashboard: React.FC<Props> = ({ user, updateUser }) => {
     { time: '08:00', title: 'London Session Open', impact: 'LOW' },
     { time: '07:45', title: 'EURUSD Technical Breakout', impact: 'MED' },
     { time: '06:30', title: 'Goldman Sachs Outlook Updated', impact: 'HIGH' }
+  ]);
+  
+  // Ticker Headlines
+  const [tickerHeadlines, setTickerHeadlines] = useState<string[]>([
+     "BTC/USD holding above 65k support",
+     "Fed signals potential rate pause in next meeting",
+     "Gold (XAU) hits new all-time high amid geopolitical tension",
+     "Tech sector rallies as AI stocks surge",
+     "ECB President warns of persistent inflation risks"
   ]);
 
   // Simulation Effects
@@ -85,6 +93,11 @@ const Dashboard: React.FC<Props> = ({ user, updateUser }) => {
                 title: randomNews.t,
                 impact: randomNews.i as any
             }, ...prev.slice(0, 4)]);
+            
+            // Update ticker occasionally
+            if (Math.random() > 0.5) {
+                setTickerHeadlines(prev => [randomNews.t, ...prev.slice(0, 5)]);
+            }
         }
     }, 4000);
 
@@ -148,6 +161,24 @@ const Dashboard: React.FC<Props> = ({ user, updateUser }) => {
                   <Zap size={16} fill="currentColor" /> New Scan
                </button>
             </div>
+          </div>
+
+          {/* NEWS TICKER (Horizontal Scroll) */}
+          <div className="w-full bg-slate-900 border border-slate-800 rounded-lg overflow-hidden flex items-center h-10 relative">
+             <div className="bg-primary-600 h-full px-4 flex items-center justify-center z-10 font-bold text-xs text-white shrink-0">
+                BREAKING
+             </div>
+             <div className="flex-1 overflow-hidden relative h-full flex items-center">
+                 <div className="animate-ticker whitespace-nowrap flex items-center gap-8 absolute">
+                    {/* Double the content for smooth loop */}
+                    {[...tickerHeadlines, ...tickerHeadlines].map((news, i) => (
+                       <span key={i} className="text-sm font-mono text-slate-300 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary-500"></span>
+                          {news}
+                       </span>
+                    ))}
+                 </div>
+             </div>
           </div>
 
           {/* 2. KEY METRICS GRID */}

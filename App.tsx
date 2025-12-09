@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ThreeBackground from './components/ThreeBackground';
@@ -8,17 +9,18 @@ import AuthPage from './pages/AuthPage';
 import AdminPanel from './pages/AdminPanel';
 import IdentityPage from './pages/IdentityPage';
 import TradingJourney from './components/TradingJourney';
+import JournalPage from './pages/JournalPage'; 
 import Sidebar from './components/Sidebar';
 import { UserProfile, AccountType } from './types';
-import { Settings, Save, CheckCircle2 } from 'lucide-react';
+import { Settings, Save, CheckCircle2, Bell } from 'lucide-react';
 
-const JourneyPageWrapper: React.FC<{user: UserProfile, updateUser: any}> = ({user, updateUser}) => {
+const LogsPageWrapper: React.FC<{user: UserProfile, updateUser: any}> = ({user, updateUser}) => {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col md:flex-row font-sans">
       <Sidebar user={user} />
       <main className="flex-1 overflow-y-auto h-screen relative">
          <div className="p-6 md:p-10 max-w-[1400px] mx-auto">
-            <h1 className="text-3xl font-black text-white mb-8 uppercase tracking-tighter">Trading Journey</h1>
+            <h1 className="text-3xl font-black text-white mb-8 uppercase tracking-tighter">Automated Logs</h1>
             <TradingJourney user={user} updateUser={updateUser} />
          </div>
       </main>
@@ -31,10 +33,35 @@ const SettingsPageWrapper: React.FC<{user: UserProfile, updateUser: any}> = ({us
    const [username, setUsername] = useState(user.username);
    const [isSaved, setIsSaved] = useState(false);
 
+   // Initialize notifications if missing (for legacy users)
+   useEffect(() => {
+     if (!settingsForm.notifications) {
+       setSettingsForm(prev => ({
+         ...prev,
+         notifications: {
+           signals: true,
+           marketAlerts: true,
+           updates: true
+         }
+       }));
+     }
+   }, []);
+
    const saveSettings = () => {
       updateUser({ settings: settingsForm, username: username });
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
+   };
+
+   const toggleNotification = (key: keyof typeof settingsForm.notifications) => {
+      if (!settingsForm.notifications) return;
+      setSettingsForm({
+        ...settingsForm,
+        notifications: {
+          ...settingsForm.notifications,
+          [key]: !settingsForm.notifications[key as any]
+        }
+      });
    };
 
    return (
@@ -98,6 +125,54 @@ const SettingsPageWrapper: React.FC<{user: UserProfile, updateUser: any}> = ({us
                           ))}
                        </div>
                    </div>
+
+                   {/* NOTIFICATIONS SECTION */}
+                   <div className="pt-8 border-t border-slate-800">
+                      <h4 className="text-sm font-bold text-white mb-6 flex items-center gap-2">
+                        <Bell size={18} className="text-primary-500"/> Notification Center
+                      </h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-xl">
+                            <div>
+                                <p className="text-sm font-bold text-white">New Trade Signals</p>
+                                <p className="text-xs text-slate-500">Get push notifications when AI detects a new setup.</p>
+                            </div>
+                            <button 
+                                onClick={() => toggleNotification('signals')}
+                                className={`w-12 h-6 rounded-full p-1 transition-colors ${settingsForm.notifications?.signals ? 'bg-primary-600' : 'bg-slate-700'}`}
+                            >
+                                <div className={`w-4 h-4 rounded-full bg-white transition-transform ${settingsForm.notifications?.signals ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-xl">
+                            <div>
+                                <p className="text-sm font-bold text-white">Market Volatility Alerts</p>
+                                <p className="text-xs text-slate-500">Warnings for high-impact news (NFP, FOMC, CPI).</p>
+                            </div>
+                            <button 
+                                onClick={() => toggleNotification('marketAlerts')}
+                                className={`w-12 h-6 rounded-full p-1 transition-colors ${settingsForm.notifications?.marketAlerts ? 'bg-primary-600' : 'bg-slate-700'}`}
+                            >
+                                <div className={`w-4 h-4 rounded-full bg-white transition-transform ${settingsForm.notifications?.marketAlerts ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-xl">
+                            <div>
+                                <p className="text-sm font-bold text-white">System Updates</p>
+                                <p className="text-xs text-slate-500">Notifications about platform maintenance and new features.</p>
+                            </div>
+                            <button 
+                                onClick={() => toggleNotification('updates')}
+                                className={`w-12 h-6 rounded-full p-1 transition-colors ${settingsForm.notifications?.updates ? 'bg-primary-600' : 'bg-slate-700'}`}
+                            >
+                                <div className={`w-4 h-4 rounded-full bg-white transition-transform ${settingsForm.notifications?.updates ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                            </button>
+                        </div>
+                      </div>
+                   </div>
+
                    <button 
                       onClick={saveSettings} 
                       className="w-full bg-primary-600 text-white font-black text-lg py-4 rounded-xl hover:bg-primary-500 transition shadow-lg shadow-primary-500/20 mt-4 flex items-center justify-center gap-2"
@@ -120,27 +195,24 @@ const App: React.FC = () => {
 
   // Initialize/Load User from LocalStorage (Session)
   useEffect(() => {
-    // We now use 'tv_session' for the currently logged in user
+    // 1. Initial Load
     const storedSession = localStorage.getItem('tv_session');
-    
-    // Legacy support: Check for old 'sniper_user' key and migrate it if found
-    if (!storedSession) {
-        const legacy = localStorage.getItem('sniper_user');
-        if (legacy) {
-            const legacyUser = JSON.parse(legacy);
-            localStorage.setItem('tv_session', legacy);
-            
-            // Also ensure it's in the DB
-            const dbStr = localStorage.getItem('tv_users');
-            const db = dbStr ? JSON.parse(dbStr) : [];
-            if (!db.some((u: any) => u.id === legacyUser.id)) {
-                db.push(legacyUser);
-                localStorage.setItem('tv_users', JSON.stringify(db));
+    if (storedSession) {
+        let currentUser = JSON.parse(storedSession);
+        
+        // 2. CHECK DATABASE SYNC
+        // If the admin updated the plan in 'tv_users', the session might be stale.
+        // Let's check the master record and update if needed.
+        const dbStr = localStorage.getItem('tv_users');
+        if (dbStr) {
+            const db: UserProfile[] = JSON.parse(dbStr);
+            const masterRecord = db.find(u => u.id === currentUser.id);
+            if (masterRecord) {
+                currentUser = masterRecord;
+                localStorage.setItem('tv_session', JSON.stringify(currentUser));
             }
-            setUser(legacyUser);
         }
-    } else {
-        setUser(JSON.parse(storedSession));
+        setUser(currentUser);
     }
     
     setIsLoading(false);
@@ -186,27 +258,32 @@ const App: React.FC = () => {
             
             <Route 
               path="/dashboard" 
-              element={user ? <Dashboard user={user} updateUser={updateUser} /> : <Navigate to="/auth" replace />} 
+              element={user ? <Dashboard user={user} updateUser={updateUser} /> : <Navigate to="/auth" />} 
             />
             
             <Route 
               path="/analysis" 
-              element={user ? <AnalysisPage user={user} updateUser={updateUser} /> : <Navigate to="/auth" replace />} 
+              element={user ? <AnalysisPage user={user} updateUser={updateUser} /> : <Navigate to="/auth" />} 
             />
             
             <Route 
+              path="/logs" 
+              element={user ? <LogsPageWrapper user={user} updateUser={updateUser} /> : <Navigate to="/auth" />} 
+            />
+
+            <Route 
               path="/journey" 
-              element={user ? <JourneyPageWrapper user={user} updateUser={updateUser} /> : <Navigate to="/auth" replace />} 
+              element={user ? <JournalPage user={user} updateUser={updateUser} /> : <Navigate to="/auth" />} 
             />
             
             <Route 
               path="/settings" 
-              element={user ? <SettingsPageWrapper user={user} updateUser={updateUser} /> : <Navigate to="/auth" replace />} 
+              element={user ? <SettingsPageWrapper user={user} updateUser={updateUser} /> : <Navigate to="/auth" />} 
             />
 
             <Route 
               path="/id" 
-              element={user ? <IdentityPage user={user} updateUser={updateUser} /> : <Navigate to="/auth" replace />} 
+              element={user ? <IdentityPage user={user} updateUser={updateUser} /> : <Navigate to="/auth" />} 
             />
             
             <Route 

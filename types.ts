@@ -16,6 +16,11 @@ export interface UserSettings {
   accountSize: number;
   riskPercentage: number;
   accountType: AccountType;
+  notifications?: {
+    signals: boolean;
+    marketAlerts: boolean;
+    updates: boolean;
+  };
 }
 
 export interface TradeLog {
@@ -32,7 +37,28 @@ export interface TradeLog {
   sl?: number;
   tp1?: number;
   tp2?: number;
-  strategy?: string; // e.g. "Order Block", "FVG"
+  strategy?: string; 
+  // Notion-style Journaling Fields
+  confluence?: string[]; // e.g. ["BOS", "FVG", "Fib 0.618"]
+  emotions?: string; // e.g. "Confident", "FOMO", "Anxious"
+  notes?: string; // Long form text
+  rr?: number; // Realized Risk Reward
+}
+
+// NEW: Manual Pro Journal Entry
+export interface JournalEntry {
+  id: string;
+  date: string;
+  pair: string;
+  direction: 'BUY' | 'SELL';
+  setupType: string; // "Breakout", "Reversal", etc.
+  lotSize: number;
+  result: 'WIN' | 'LOSS' | 'BE';
+  pnlAmount: number;
+  accountBalanceAfter: number; // To track growth curve
+  growthPercentage: number; // Trade growth impact
+  notes: string;
+  screenshot?: string; // Optional base64
 }
 
 export interface UserProfile {
@@ -47,6 +73,7 @@ export interface UserProfile {
   idTheme: string; // 'cyan', 'emerald', 'violet', etc.
   avatarImage?: string; // Base64 string for custom avatar
   tradeHistory: TradeLog[];
+  journalEntries?: JournalEntry[]; // New field for Pro Journey
 }
 
 export interface TradeSignal {

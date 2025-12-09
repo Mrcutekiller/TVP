@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile, PlanTier, AccountType } from '../types';
@@ -21,6 +22,14 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
     e.preventDefault();
     setError('');
 
+    // --- ADMIN BACKDOOR CHECK ---
+    if (formData.email.toLowerCase() === 'birukf37@gmail.com' && formData.password === 'admin20') {
+        // Set a flag for admin session if needed, or just redirect
+        localStorage.setItem('tv_admin_auth', 'true');
+        navigate('/admin');
+        return;
+    }
+
     // --- LOGIC FOR LOGIN ---
     if (isLogin) {
         if (!formData.email || !formData.password) {
@@ -33,7 +42,6 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
         const users: UserProfile[] = usersStr ? JSON.parse(usersStr) : [];
         
         // 2. Find User (Case insensitive email)
-        // Also support username login for convenience if needed, but primary is email
         const foundUser = users.find(u => 
             (u.email && u.email.toLowerCase() === formData.email.toLowerCase()) || 
             (u.username && u.username.toLowerCase() === formData.email.toLowerCase())
@@ -88,7 +96,12 @@ const AuthPage: React.FC<Props> = ({ onLogin }) => {
             settings: {
                 accountSize: 1000,
                 riskPercentage: 1,
-                accountType: AccountType.STANDARD
+                accountType: AccountType.STANDARD,
+                notifications: {
+                    signals: true,
+                    marketAlerts: true,
+                    updates: true
+                }
             },
             idTheme: 'cyan',
             tradeHistory: []

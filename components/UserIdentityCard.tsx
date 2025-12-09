@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { UserProfile } from '../types';
-import { Shield, Copy, Check, QrCode, Crown, Fingerprint, Share2, Download, Link as LinkIcon, X, Camera } from 'lucide-react';
+import { Shield, Copy, Check, QrCode, Crown, Fingerprint, Share2, Download, Link as LinkIcon, X, Camera, User } from 'lucide-react';
 
 interface Props {
   user: UserProfile;
@@ -135,6 +135,12 @@ const UserIdentityCard: React.FC<Props> = ({ user, isTeamMember, theme, showCont
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && onAvatarUpload) {
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+          alert("File too large. Please upload an image under 2MB.");
+          return;
+      }
+
       const reader = new FileReader();
       reader.onloadend = () => {
         onAvatarUpload(reader.result as string);
@@ -200,11 +206,12 @@ const UserIdentityCard: React.FC<Props> = ({ user, isTeamMember, theme, showCont
               <div 
                 className={`relative w-28 h-28 transform-style-3d ${showControls ? 'cursor-pointer group' : ''}`}
                 onClick={() => showControls && fileInputRef.current?.click()}
+                title={showControls ? "Click to upload avatar" : ""}
               >
                  <div className={`absolute inset-0 rounded-full border-4 ${styles.ringColor} shadow-[0_0_20px_inset] shadow-white/10 animate-pulse-fast transition-colors duration-500`}></div>
                  <div className="absolute inset-2 rounded-full overflow-hidden bg-black/60 backdrop-blur-sm flex items-center justify-center border border-white/10">
                     {user.avatarImage ? (
-                      <img src={user.avatarImage} alt="Avatar" className="w-full h-full object-cover" />
+                      <img src={user.avatarImage} alt="User Avatar" className="w-full h-full object-cover" />
                     ) : (
                       isTeamMember ? (
                          <Crown size={40} className={styles.accent} strokeWidth={1.5} />
@@ -293,13 +300,23 @@ const UserIdentityCard: React.FC<Props> = ({ user, isTeamMember, theme, showCont
             ))}
           </div>
 
-          <button 
-            onClick={() => setShowShareModal(true)}
-            className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary-500/50 rounded-full text-sm font-bold text-slate-300 hover:text-white transition-all duration-300 group"
-          >
-            <Share2 size={16} className="group-hover:text-primary-500 transition-colors" />
-            <span>SHARE ID</span>
-          </button>
+          <div className="flex gap-4">
+             <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary-500/50 rounded-full text-sm font-bold text-slate-300 hover:text-white transition-all duration-300"
+             >
+                <Camera size={16} />
+                <span>CHANGE AVATAR</span>
+             </button>
+
+             <button 
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-primary-500/50 rounded-full text-sm font-bold text-slate-300 hover:text-white transition-all duration-300 group"
+             >
+                <Share2 size={16} className="group-hover:text-primary-500 transition-colors" />
+                <span>SHARE ID</span>
+             </button>
+          </div>
         </div>
       )}
 
